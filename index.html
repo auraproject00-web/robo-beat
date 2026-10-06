@@ -148,7 +148,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
     <div class="overlay" id="overlay">
       <div class="box">
         <div class="big" id="ovBig">Tap untuk memulai</div>
-        <div class="small" id="ovSmall">Lompati kardus &amp; pot bunga, nunduk kalau ada gagak</div>
+        <div class="small" id="ovSmall" hidden></div>
       </div>
     </div>
   </div>
@@ -519,6 +519,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
     ovBig.textContent = newHi ? 'Rekor baru!' : 'Ketabrak!';
     ovBig.classList.add('hit');
     ovSmall.textContent = 'Skor ' + final + ' · tap untuk main lagi';
+    ovSmall.hidden = false;
     overlay.hidden = false;
     btnChar.disabled = false;
   }
