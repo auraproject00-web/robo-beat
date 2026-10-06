@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Robo Beat: game lari tanpa henti, lompati kardus dan pot bunga, hindari gagak.">
+<meta name="description" content="Robo Beat: game lari tanpa henti, lompati kardus dan drum oli, hindari gagak.">
 <meta name="theme-color" content="#131619">
 <style>
 :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -71,12 +71,12 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
   display: flex; flex-direction: column; gap: 14px;
 }
 .sheet h2 { margin: 0; font-family: var(--font-display); font-size: 1.1rem; }
-.chars { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .char {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 10px; border-radius: 6px; cursor: pointer;
   background: var(--panel); color: var(--ink); border: 2px solid var(--soft);
-  font-family: var(--font-display); font-size: 0.85rem;
+  font-family: var(--font-display); font-size: 0.8rem;
 }
 .char canvas { width: 100%; max-width: 120px; aspect-ratio: 5 / 3; image-rendering: pixelated; border-radius: 4px; }
 .char[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
@@ -232,20 +232,20 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
       "dbbbbbbbbbbd",
       "dddddddddddd"
     ],
-    pot: [
-      ".fff.fff..",
-      ".fyf.fyf..",
-      ".fff.fff..",
-      "..l...l...",
-      "..ll.ll.l.",
-      "...lll.ll.",
-      "....l.....",
-      "RRRRRRRRRR",
-      ".rrrrrrrr.",
-      ".rrrrrrrr.",
-      "..rrrrrr..",
-      "..rrrrrr..",
-      "..RRRRRR.."
+    drum: [
+      ".dddddddd.",
+      "dbbbbbbbbd",
+      "dbhbbbbbbd",
+      "dddddddddd",
+      "dbhbbbbbbd",
+      "dbhbyyybbd",
+      "dbhbyyybbd",
+      "dbhbbbbbbd",
+      "dddddddddd",
+      "dbhbbbbbbd",
+      "dbhbbbbbbd",
+      "dbbbbbbbbd",
+      ".dddddddd."
     ],
     crowUp: [
       "......#.......",
@@ -295,76 +295,31 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
   const size = g => ({ w: Math.max(...g.map(r => r.length)) * P, h: g.length * P });
 
   /* ---------- playable characters ---------- */
+  /* ---------- playable characters: one robot body, five crews ---------- */
+  const ROBO_RUN = [SPR.runA, SPR.runB], ROBO_DUCK = [SPR.duckA, SPR.duckB];
   const CHARS = {
-    robo: {
-      name: 'Robo',
-      run: [SPR.runA, SPR.runB], duck: [SPR.duckA, SPR.duckB],
+    beat: {
+      name: 'Beat', run: ROBO_RUN, duck: ROBO_DUCK,
       colors: { c: '#2c2e36', e: '#e8edf2', w: '#b9c6d3', v: '#ff4f9a', o: '#f08a24', m: '#5b2a3c', n: '#f4f4f4', k: '#24252c', s: '#2f7de1' }
     },
-    tikus: {
-      name: 'Tikus Detektif',
-      run: [[
-        "..........hhh.....", ".........hhhhh....", "........hhhhhhhh..", ".......pp#####....",
-        ".......pp##k###...", "........#######p..", "pp....#######.kkk.", "..p..########kgggk",
-        "...p#########kgggk", "....#########.kkk.", ".....#######.k....", ".....#.#...#.#....",
-        "....##....##......"
-      ], [
-        "..........hhh.....", ".........hhhhh....", "........hhhhhhhh..", ".......pp#####....",
-        ".......pp##k###...", "........#######p..", "pp....#######.kkk.", "..p..########kgggk",
-        "...p#########kgggk", "....#########.kkk.", ".....#######.k....", "......##..##......",
-        "......#...#......."
-      ]],
-      duck: [[
-        "............hhh.....", "..........hhhhhhh...", ".........pp#####....", ".........##k#####p..",
-        "pp...############...", "..p.#############...", "....#.#.......#.#...", "...##........##....."
-      ], [
-        "............hhh.....", "..........hhhhhhh...", ".........pp#####....", ".........##k#####p..",
-        "pp...############...", "..p.#############...", ".....##......##.....", ".....#.......#......"
-      ]],
-      colors: { '#': '#8e949d', h: '#7b5634', k: '#24242a', p: '#e58ea0', g: '#d3ebf5' }
+    nova: {
+      name: 'Nova', run: ROBO_RUN, duck: ROBO_DUCK,
+      colors: { c: '#f3f3ef', e: '#2fb5a3', w: '#5f6772', v: '#36f0c8', o: '#e9e7e0', m: '#aeb8b4', n: '#ffffff', k: '#2a2c31', s: '#2fb5a3' }
     },
-    kucing: {
-      name: 'Kucing Oren',
-      run: [[
-        "...........#...#", "...........##.##", "#..........#####", "#..........#k#k#",
-        ".#.........##p##", "..###s###s#####.", "..#s###s####...", "..###########...",
-        "..##########....", "..#.#.....#.#...", ".#..#.....#..#..", "................"
-      ], [
-        "...........#...#", "...........##.##", "#..........#####", "#..........#k#k#",
-        ".#.........##p##", "..###s###s#####.", "..#s###s####...", "..###########...",
-        "..##########....", "...##.....##....", "...#.......#....", "................"
-      ]],
-      duck: [[
-        "...............#.#", "#..............###", ".#.#####s###s##k#k",
-        "..##s###s#####p##.", "..#############...", "..#.#.......#.#...", ".#...#.....#...#.."
-      ], [
-        "...............#.#", "#..............###", ".#.#####s###s##k#k",
-        "..##s###s#####p##.", "..#############...", "...##.......##....", "...#.........#...."
-      ]],
-      colors: { '#': '#f29a3a', s: '#c86b1c', k: '#24242a', p: '#ff8fa3' }
+    rust: {
+      name: 'Rust', run: ROBO_RUN, duck: ROBO_DUCK,
+      colors: { c: '#ef7d22', e: '#f2913f', w: '#3a3c42', v: '#ffb43a', o: '#26272c', m: '#ef7d22', n: '#45464c', k: '#26272c', s: '#e8762a' }
     },
-    katak: {
-      name: 'Katak',
-      run: [[
-        "........gg..gg..", ".......gwkggwkg.", ".......ggggggggg", "....ggggggggrrrg",
-        "...gggggggggggg.", "..gggllllllggg..", "..ggllllllllgg..", "..ggllllllllgg..",
-        "...gglllllgg....", "..ggg.....ggg...", ".gg.........gg..", "................"
-      ], [
-        "........gg..gg..", ".......gwkggwkg.", ".......ggggggggg", "....ggggggggrrrg",
-        "...gggggggggggg.", "..gggllllllggg..", "..ggllllllllgg..", "..ggllllllllgg..",
-        "...gglllllgg....", "...gg.....gg....", "...ggg....ggg...", "................"
-      ]],
-      duck: [[
-        "..........gg..gg..", ".........gwkggwkg.", "....ggggggggggggg.", "..gggglllllllggg..",
-        "..gggllllllllggg..", ".ggg..........ggg.", "gg..............gg"
-      ], [
-        "..........gg..gg..", ".........gwkggwkg.", "....ggggggggggggg.", "..gggglllllllggg..",
-        "..gggllllllllggg..", "..gg..........gg..", "..ggg........ggg.."
-      ]],
-      colors: { g: '#4cb85a', l: '#c9ec8f', w: '#ffffff', k: '#1f2a1f', r: '#e0566e' }
-    }
+    glo: {
+      name: 'Glo', run: ROBO_RUN, duck: ROBO_DUCK,
+      colors: { c: '#6a3fd1', e: '#e19df0', w: '#c9c3e6', v: '#b77bff', o: '#d779e6', m: '#3b2a5c', n: '#f2c8f7', k: '#2a2340', s: '#9b5cf0' }
+    },
+    zee: {
+      name: 'Zee', run: ROBO_RUN, duck: ROBO_DUCK,
+      colors: { c: '#26272c', e: '#b5e61d', w: '#8ea83a', v: '#cdf53a', o: '#b5e61d', m: '#2f3a1a', n: '#dcf57a', k: '#26272c', s: '#8fbf1a' }
+    },
   };
-  let charId = 'robo';
+  let charId = 'beat';
   try { const saved = localStorage.getItem('roboBeatChar'); if (saved && CHARS[saved]) charId = saved; } catch (e) {}
 
   const cv = document.getElementById('cv');
@@ -461,7 +416,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
 
   function makeObstacle(kind, x) {
     if (kind === 'box') return { kind, x, ...size(SPR.box), y: GROUND - 24 };
-    if (kind === 'pot') return { kind, x, ...size(SPR.pot), y: GROUND - 26, flower: FLOWERS[Math.floor(Math.random() * FLOWERS.length)] };
+    if (kind === 'drum') return { kind, x, ...size(SPR.drum), y: GROUND - 26, paint: DRUMS[Math.floor(Math.random() * DRUMS.length)] };
     if (kind === 'box2') return { kind, x, w: 48, h: 24, y: GROUND - 24 };
     if (kind === 'stack') return { kind, x, w: 24, h: 48, y: GROUND - 48 };
     if (kind.startsWith('crow')) {
@@ -475,7 +430,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
     if (S.score > 250 && Math.random() < 0.28) {
       kind = ['crowLow', 'crowMid', 'crowMid', 'crowHigh'][Math.floor(Math.random() * 4)];
     } else {
-      const pool = ['box', 'pot', 'pot'];
+      const pool = ['box', 'drum', 'drum'];
       if (S.score > 120) pool.push('box2');
       if (S.score > 450) pool.push('stack');
       kind = pool[Math.floor(Math.random() * pool.length)];
@@ -486,7 +441,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
 
   function setReady() {
     S.mode = 'ready';
-    S.obs = [makeObstacle('pot', Math.max(HERO_X + 170, worldW * 0.68))];
+    S.obs = [makeObstacle('drum', Math.max(HERO_X + 170, worldW * 0.68))];
     S.hero.y = 0; S.hero.vy = 0;
     overlay.hidden = false;
   }
@@ -622,7 +577,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
     c: '#2c2e36', e: '#e8edf2', w: '#b9c6d3', v: '#ff4f9a',
     o: '#f08a24', m: '#5b2a3c', n: '#f4f4f4', k: '#24252c', s: '#2f7de1'
   };
-  const FLOWERS = ['#ff5a7a', '#a970ff', '#ffb000', '#ff7a2f'];
+  const DRUMS = ['#d23b2f', '#2f6fd6', '#2f9e5a', '#e0821f'];
   const DUSK = '#0f1a2b';
   const dim = (col, n) => n > 0 ? mix(col, DUSK, n * 0.4) : col;
   function drawSprite(g, x, y, map) {
@@ -679,9 +634,8 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
     const crowMap = { '#': crowCol, y: dim('#ffb000', n) };
     for (const o of S.obs) {
       if (o.kind === 'box') drawSprite(SPR.box, o.x, o.y, boxMap);
-      else if (o.kind === 'pot') drawSprite(SPR.pot, o.x, o.y, {
-        f: dim(o.flower, n), y: dim('#ffe066', n), l: dim('#3faf5c', n),
-        r: dim('#d0683c', n), R: dim('#a14b27', n)
+      else if (o.kind === 'drum') drawSprite(SPR.drum, o.x, o.y, {
+        b: dim(o.paint, n), d: dim('#2b2e35', n), h: dim('#e9edf2', n), y: dim('#f2c230', n)
       });
       else if (o.kind === 'box2') { drawSprite(SPR.box, o.x, o.y, boxMap); drawSprite(SPR.box, o.x + 24, o.y, boxMap); }
       else if (o.kind === 'stack') { drawSprite(SPR.box, o.x, o.y, boxMap); drawSprite(SPR.box, o.x, o.y + 24, boxMap); }
