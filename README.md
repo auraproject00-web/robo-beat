@@ -6,5 +6,6 @@ Game lari tanpa henti berbasis HTML5 Canvas. Lompati kardus dan pot bunga, nundu
 - **Lompat:** tap arena / tombol Lompat / Spasi / ↑ (tahan lebih lama = lompatan lebih tinggi)
 - **Nunduk:** tahan tombol Nunduk / ↓
 - **Suara:** tombol Suara / M
+- **Karakter:** pilih Robo, Tikus Detektif, Kucing Oren, atau Katak lewat tombol Karakter
 
 Semua dalam satu file `index.html`, tanpa build. Buka langsung di browser atau hosting di GitHub Pages.

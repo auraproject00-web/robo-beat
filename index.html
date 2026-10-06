@@ -60,8 +60,33 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
 }
 .sound[aria-pressed="true"] { border-color: var(--ink); }
 .sound:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.sound:disabled { opacity: 0.4; cursor: not-allowed; }
+.picker {
+  position: fixed; inset: 0; z-index: 10; display: grid; place-items: center;
+  padding: 16px; background: rgba(8, 10, 14, 0.6);
+}
+.sheet {
+  width: min(440px, 100%); background: var(--paper); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 8px; padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.sheet h2 { margin: 0; font-family: var(--font-display); font-size: 1.1rem; }
+.chars { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.char {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 10px; border-radius: 6px; cursor: pointer;
+  background: var(--panel); color: var(--ink); border: 2px solid var(--soft);
+  font-family: var(--font-display); font-size: 0.85rem;
+}
+.char canvas { width: 100%; max-width: 120px; aspect-ratio: 5 / 3; image-rendering: pixelated; border-radius: 4px; }
+.char[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+.char:focus-visible, .sheet .close:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.sheet .close {
+  font-family: var(--font-display); font-size: 1rem; color: var(--paper); background: var(--ink);
+  border: 2px solid var(--ink); border-radius: 6px; padding-block: 12px; cursor: pointer;
+}
 .stage { position: relative; border-radius: 6px; overflow: hidden; }
-canvas {
+#cv {
   display: block; width: 100%; height: clamp(190px, 50vw, 280px);
   touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -100,9 +125,18 @@ canvas {
         <span class="hi">HI <span id="hi">00000</span></span>
         <span class="now" id="now">00000</span>
       </div>
+      <button class="sound" id="btnChar" type="button">Karakter</button>
       <button class="sound" id="btnSound" type="button" aria-pressed="true">Suara on</button>
     </div>
   </header>
+
+  <div class="picker" id="picker" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+      <h2 id="pickTitle">Pilih Karakter</h2>
+      <div class="chars" id="chars"></div>
+      <button class="close" id="btnClose" type="button">Main</button>
+    </div>
+  </div>
 
   <div class="stage" id="stage">
     <canvas id="cv" aria-label="Arena game. Tap untuk lompat."></canvas>
@@ -114,7 +148,7 @@ canvas {
     </div>
   </div>
 
-  <p class="help">Tap arena atau tombol Lompat untuk melompat; tahan lebih lama biar lompatan lebih tinggi. Tahan Nunduk untuk menghindari gagak, atau untuk turun lebih cepat saat di udara. Tiap 500 poin, siang berganti malam. Di keyboard: <kbd>Spasi</kbd>/<kbd>↑</kbd> lompat, <kbd>↓</kbd> nunduk, <kbd>M</kbd> suara.</p>
+  <p class="help">Tap arena atau tombol Lompat untuk melompat; tahan lebih lama biar lompatan lebih tinggi. Tahan Nunduk untuk menghindari gagak, atau untuk turun lebih cepat saat di udara. Tiap 500 poin, siang berganti malam. Ganti tokoh lewat tombol Karakter. Di keyboard: <kbd>Spasi</kbd>/<kbd>↑</kbd> lompat, <kbd>↓</kbd> nunduk, <kbd>M</kbd> suara.</p>
 
   <div class="controls">
     <button id="btnJump" type="button">Lompat</button>
@@ -255,6 +289,79 @@ canvas {
   };
   const size = g => ({ w: Math.max(...g.map(r => r.length)) * P, h: g.length * P });
 
+  /* ---------- playable characters ---------- */
+  const CHARS = {
+    robo: {
+      name: 'Robo',
+      run: [SPR.runA, SPR.runB], duck: [SPR.duckA, SPR.duckB],
+      colors: { c: '#2c2e36', e: '#e8edf2', w: '#b9c6d3', v: '#ff4f9a', o: '#f08a24', m: '#5b2a3c', n: '#f4f4f4', k: '#24252c', s: '#2f7de1' }
+    },
+    tikus: {
+      name: 'Tikus Detektif',
+      run: [[
+        "..........hhh.....", ".........hhhhh....", "........hhhhhhhh..", ".......pp#####....",
+        ".......pp##k###...", "........#######p..", "pp....#######.kkk.", "..p..########kgggk",
+        "...p#########kgggk", "....#########.kkk.", ".....#######.k....", ".....#.#...#.#....",
+        "....##....##......"
+      ], [
+        "..........hhh.....", ".........hhhhh....", "........hhhhhhhh..", ".......pp#####....",
+        ".......pp##k###...", "........#######p..", "pp....#######.kkk.", "..p..########kgggk",
+        "...p#########kgggk", "....#########.kkk.", ".....#######.k....", "......##..##......",
+        "......#...#......."
+      ]],
+      duck: [[
+        "............hhh.....", "..........hhhhhhh...", ".........pp#####....", ".........##k#####p..",
+        "pp...############...", "..p.#############...", "....#.#.......#.#...", "...##........##....."
+      ], [
+        "............hhh.....", "..........hhhhhhh...", ".........pp#####....", ".........##k#####p..",
+        "pp...############...", "..p.#############...", ".....##......##.....", ".....#.......#......"
+      ]],
+      colors: { '#': '#8e949d', h: '#7b5634', k: '#24242a', p: '#e58ea0', g: '#d3ebf5' }
+    },
+    kucing: {
+      name: 'Kucing Oren',
+      run: [[
+        "...........#...#", "...........##.##", "#..........#####", "#..........#k#k#",
+        ".#.........##p##", "..###s###s#####.", "..#s###s####...", "..###########...",
+        "..##########....", "..#.#.....#.#...", ".#..#.....#..#..", "................"
+      ], [
+        "...........#...#", "...........##.##", "#..........#####", "#..........#k#k#",
+        ".#.........##p##", "..###s###s#####.", "..#s###s####...", "..###########...",
+        "..##########....", "...##.....##....", "...#.......#....", "................"
+      ]],
+      duck: [[
+        "...............#.#", "#..............###", ".#.#####s###s##k#k",
+        "..##s###s#####p##.", "..#############...", "..#.#.......#.#...", ".#...#.....#...#.."
+      ], [
+        "...............#.#", "#..............###", ".#.#####s###s##k#k",
+        "..##s###s#####p##.", "..#############...", "...##.......##....", "...#.........#...."
+      ]],
+      colors: { '#': '#f29a3a', s: '#c86b1c', k: '#24242a', p: '#ff8fa3' }
+    },
+    katak: {
+      name: 'Katak',
+      run: [[
+        "........gg..gg..", ".......gwkggwkg.", ".......ggggggggg", "....ggggggggrrrg",
+        "...gggggggggggg.", "..gggllllllggg..", "..ggllllllllgg..", "..ggllllllllgg..",
+        "...gglllllgg....", "..ggg.....ggg...", ".gg.........gg..", "................"
+      ], [
+        "........gg..gg..", ".......gwkggwkg.", ".......ggggggggg", "....ggggggggrrrg",
+        "...gggggggggggg.", "..gggllllllggg..", "..ggllllllllgg..", "..ggllllllllgg..",
+        "...gglllllgg....", "...gg.....gg....", "...ggg....ggg...", "................"
+      ]],
+      duck: [[
+        "..........gg..gg..", ".........gwkggwkg.", "....ggggggggggggg.", "..gggglllllllggg..",
+        "..gggllllllllggg..", ".ggg..........ggg.", "gg..............gg"
+      ], [
+        "..........gg..gg..", ".........gwkggwkg.", "....ggggggggggggg.", "..gggglllllllggg..",
+        "..gggllllllllggg..", "..gg..........gg..", "..ggg........ggg.."
+      ]],
+      colors: { g: '#4cb85a', l: '#c9ec8f', w: '#ffffff', k: '#1f2a1f', r: '#e0566e' }
+    }
+  };
+  let charId = 'robo';
+  try { const saved = localStorage.getItem('roboBeatChar'); if (saved && CHARS[saved]) charId = saved; } catch (e) {}
+
   const cv = document.getElementById('cv');
   const ctx = cv.getContext('2d');
   const nowEl = document.getElementById('now');
@@ -388,6 +495,7 @@ canvas {
     S.hero.y = 0; S.hero.vy = 0;
     nowEl.textContent = pad(0);
     overlay.hidden = true;
+    btnChar.disabled = true;
     jump();
   }
 
@@ -407,6 +515,7 @@ canvas {
     ovBig.classList.add('hit');
     ovSmall.textContent = 'Skor ' + final + ' · tap untuk main lagi';
     overlay.hidden = false;
+    btnChar.disabled = false;
   }
 
   function jump() {
@@ -433,8 +542,10 @@ canvas {
 
   function heroBox() {
     const ducking = S.duckHeld && S.hero.y === 0;
-    if (ducking) return { x: HERO_X + 8, y: GROUND - 16 + 6, w: 26, h: 9 };
-    return { x: HERO_X + 8, y: GROUND - S.hero.y - 26 + 7, w: 20, h: 18 };
+    const ch = CHARS[charId];
+    if (ducking) { const dh = ch.duck[0].length * P; return { x: HERO_X + 8, y: GROUND - dh + 6, w: 26, h: dh - 7 }; }
+    const h = ch.run[0].length * P;
+    return { x: HERO_X + 8, y: GROUND - S.hero.y - h + 7, w: 20, h: h - 8 };
   }
   function hits(a, o) {
     const i = 3;
@@ -577,8 +688,9 @@ canvas {
     const running = S.mode === 'run';
     const ducking = S.duckHeld && S.hero.y === 0 && running;
     const stepF = running && S.hero.y === 0 ? Math.floor(S.t * 12) % 2 : 0;
-    if (ducking) drawSprite(stepF ? SPR.duckB : SPR.duckA, HERO_X, GROUND - 16, HERO_COLORS);
-    else drawSprite(stepF ? SPR.runB : SPR.runA, HERO_X, GROUND - S.hero.y - 26, HERO_COLORS);
+    const ch = CHARS[charId];
+    const g = ducking ? ch.duck[stepF] : ch.run[stepF];
+    drawSprite(g, HERO_X, GROUND - (ducking ? 0 : S.hero.y) - g.length * P, ch.colors);
   }
 
   let last = performance.now(), frames = 0;
@@ -624,6 +736,7 @@ canvas {
 
   // Input: keyboard
   window.addEventListener('keydown', e => {
+    if (!picker.hidden) { if (e.code === 'Escape') closePicker(); return; }
     if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) {
       e.preventDefault();
       if (!e.repeat) primaryPress();
@@ -639,6 +752,54 @@ canvas {
     if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) primaryRelease();
     else if (['ArrowDown', 'KeyS'].includes(e.code)) S.duckHeld = false;
   });
+
+
+  /* ---------- character picker ---------- */
+  const btnChar = document.getElementById('btnChar');
+  const picker = document.getElementById('picker');
+  const charsEl = document.getElementById('chars');
+  const btnClose = document.getElementById('btnClose');
+  function drawPreview(cvs, ch) {
+    const c2 = cvs.getContext('2d');
+    c2.imageSmoothingEnabled = false;
+    const g = c2.createLinearGradient(0, 0, 0, cvs.height);
+    g.addColorStop(0, '#8fd0ff'); g.addColorStop(1, '#e8f6ff');
+    c2.fillStyle = g; c2.fillRect(0, 0, cvs.width, cvs.height);
+    c2.fillStyle = '#efe1bf'; c2.fillRect(0, cvs.height - 10, cvs.width, 10);
+    c2.fillStyle = '#7a5a35'; c2.fillRect(0, cvs.height - 10, cvs.width, 2);
+    const grid = ch.run[0], px = 4;
+    const w = Math.max(...grid.map(r => r.length)) * px, h = grid.length * px;
+    const ox = Math.round((cvs.width - w) / 2), oy = cvs.height - 10 - h;
+    for (let r = 0; r < grid.length; r++) for (let col = 0; col < grid[r].length; col++) {
+      const fill = ch.colors[grid[r][col]];
+      if (fill) { c2.fillStyle = fill; c2.fillRect(ox + col * px, oy + r * px, px, px); }
+    }
+  }
+  function buildPicker() {
+    charsEl.innerHTML = '';
+    for (const [id, ch] of Object.entries(CHARS)) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'char'; b.id = 'char-' + id;
+      b.setAttribute('aria-pressed', id === charId ? 'true' : 'false');
+      const cvs = document.createElement('canvas'); cvs.width = 120; cvs.height = 72;
+      drawPreview(cvs, ch);
+      const label = document.createElement('span'); label.textContent = ch.name;
+      b.append(cvs, label);
+      b.addEventListener('click', () => {
+        charId = id;
+        try { localStorage.setItem('roboBeatChar', id); } catch (e) {}
+        charsEl.querySelectorAll('.char').forEach(el => el.setAttribute('aria-pressed', el === b ? 'true' : 'false'));
+        ensureAudio(); sfx.point();
+      });
+      charsEl.append(b);
+    }
+  }
+  function openPicker() { if (S.mode === 'run') return; picker.hidden = false; const sel = document.getElementById('char-' + charId); if (sel) sel.focus(); }
+  function closePicker() { picker.hidden = true; btnChar.focus(); }
+  btnChar.addEventListener('click', openPicker);
+  btnClose.addEventListener('click', closePicker);
+  picker.addEventListener('click', e => { if (e.target === picker) closePicker(); });
+  buildPicker();
 
   new ResizeObserver(() => resize()).observe(cv);
   resize();
