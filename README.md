@@ -5,6 +5,12 @@ Game lari tanpa henti berbasis HTML5 Canvas, layar penuh. Pilih karakter di menu
 ## Karakter
 Beat, Nova, Rust, Glo, Zee, dan Dino.
 
+## Grafis
+- **240p:** piksel retro
+- **1080p:** gambar vektor detail (topi, headphone, visor menyala, jaket, sepatu)
+
+Pilih di menu awal; pilihan tersimpan otomatis.
+
 ## Cara main
 - **Mulai:** pilih karakter di menu, lalu tekan MULAI / Spasi
 - **Lompat:** tap layar / tombol Lompat / Spasi / ↑ (tahan lebih lama = lompatan lebih tinggi)
